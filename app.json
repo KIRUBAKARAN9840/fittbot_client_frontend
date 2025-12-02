@@ -1,0 +1,183 @@
+{
+  "expo": {
+    "name": "Fittbot",
+    "slug": "Fittbot",
+    "version": "1.0.11",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "userapp",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.fittbot.fittbot-user",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "This app needs access to the camera to take workout progress photos for tracking the user's fitness journey, capture display pictures, and upload images to the gym community feed section and for using the Scan and Log food feature.",
+        "NSPhotoLibraryUsageDescription": "Fittbot requires access to your photo library to let you upload workout progress images, choose a display picture, and share visuals in the gym community feed.",
+        "NSPhotoLibraryAddUsageDescription": "Fittbot needs permission to save captured workout progress photos and community feed posts to your photo library.",
+        "NSMicrophoneUsageDescription": "Fittbot uses your microphone to let you record and share audio posts in the gym community feed, allowing members to share fitness thoughts or instructions.Also for voice based chat with KyraAI ",
+        "NSContactsUsageDescription": "This app requires access to your contacts during referral program.",
+        "NSLocationWhenInUseUsageDescription": "This app needs access to your location only when checking in at the gym and for searching the nearby gyms."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "permissions": [
+        "com.android.vending.BILLING",
+        "android.permission.health.READ_STEPS"
+      ],
+      "package": "com.fittbot.fittbot_user",
+      "googleServicesFile": "./google-services.json"
+    },
+    "web": {
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone to let you record and share audio posts in the gym community feed, allowing members to share fitness thoughts or instructions.Also for voice based chat with KyraAI."
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true,
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35,
+            "minSdkVersion": 26
+          },
+          "ios": {
+            "extraPods": [
+              {
+                "name": "razorpay-pod",
+                "version": "~> 1.4.7",
+                "configurations": ["Debug", "Release"]
+              }
+            ]
+          }
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#FF5757",
+          "androidMode": "default",
+          "androidCollapsedTitle": "Fittbot",
+          "androidSmallIcon": "./assets/images/notification-icon.png",
+          "sounds": [
+            "./assets/sound/diet_alert.wav",
+            "./assets/sound/workout_alert.wav",
+            "./assets/sound/general_alert.wav",
+            "./assets/sound/water_alert.wav",
+            "./assets/sound/other_alert.wav"
+          ]
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#FFFFFF"
+        }
+      ],
+      [
+        "react-native-share",
+        {
+          "ios": [
+            "fb",
+            "instagram",
+            "twitter",
+            "tiktoksharesdk",
+            "whatsapp",
+            "telegram",
+            "snapchat",
+            "linkedin",
+            "pinterest",
+            "youtube",
+            "reddit",
+            "discord"
+          ],
+          "android": [
+            "com.facebook.katana",
+            "com.instagram.android",
+            "com.twitter.android",
+            "com.zhiliaoapp.musically",
+            "com.whatsapp",
+            "org.telegram.messenger",
+            "com.snapchat.android",
+            "com.linkedin.android",
+            "com.pinterest",
+            "com.google.android.youtube",
+            "com.reddit.frontpage",
+            "com.discord",
+            "com.viber.voip",
+            "jp.naver.line.android",
+            "com.skype.raider",
+            "com.google.android.gm",
+            "com.google.android.apps.messaging",
+            "com.samsung.android.messaging"
+          ],
+          "enableBase64ShareAndroid": true
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to take workout progress photos for tracking the user's fitness journey, capture display pictures, and upload images to the gym community feed section and for using the Scan and Log food feature."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Fittbot to access your photo library so you can upload fitness progress photos, set a display picture, and post images to your gym's community feed.",
+          "cameraPermission": "Allow Fittbot to use your camera for capturing workout progress shots, profile pictures,for using the Scan and Log food feature and community feed posts."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "This app needs access to your location when checking in at the gym and for searching the nearby gyms"
+        }
+      ],
+      "expo-video",
+      "react-native-health-connect",
+      "./plugins/withHealthConnect.js"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "d83115b4-2dd1-43c9-af11-da8dc85a5966"
+      },
+      "backendUrl": "https://app.fittbot.com",
+      "backendPort": "8000",
+      "disableHMRWarning": true
+    },
+    "updates": {
+      "url": "https://u.expo.dev/d83115b4-2dd1-43c9-af11-da8dc85a5966",
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "owner": "martinraju"
+  }
+}
