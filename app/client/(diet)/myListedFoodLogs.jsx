@@ -25,6 +25,8 @@ import * as Sharing from "expo-sharing";
 import * as FileSystem from "expo-file-system/legacy";
 import { Image as ExpoImage } from "expo-image";
 import Constants from "expo-constants";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Speech from "expo-speech";
 
 let Share;
 if (Constants.executionEnvironment !== "storeClient") {
@@ -35,7 +37,6 @@ if (Constants.executionEnvironment !== "storeClient") {
 
 const { width, height } = Dimensions.get("window");
 import { useFocusEffect } from "@react-navigation/native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { clientReportAPI, getClientDietAPI } from "../../../services/clientApi";
 import { showToast } from "../../../utils/Toaster";
 import HardwareBackHandler from "../../../components/HardwareBackHandler";
@@ -372,6 +373,14 @@ const myListedFoodLogs = (props) => {
     loading: userLoading,
   } = useUser();
 
+  
+  // Function to stop voice playback when modal closes
+  const stopVoiceAndCloseModal = () => {
+    Speech.stop(); // Stop any ongoing voice playback
+    setShowTargetModal(false);
+  };
+
+  
   const nutritionColors = {
     calories: "#FF5757",
     protein: "#4CAF50",
@@ -484,16 +493,62 @@ const myListedFoodLogs = (props) => {
   const fetchTodayDiet = async () => {
     const clientId = await AsyncStorage.getItem("client_id");
     try {
+      console.log("VOICE_DEBUG: fetchTodayDiet called for clientId:", clientId);
+      console.log("VOICE_DEBUG: selectedDate:", selectedDate);
+
       const response = await getClientDietAPI(
         clientId,
         toIndianISOString(selectedDate).split("T")[0]
       );
+
+      console.log("VOICE_DEBUG: Diet API response:", response);
+      console.log("VOICE_DEBUG: play_voice_success in response:", response?.play_voice_success);
+      console.log("VOICE_DEBUG: target in response:", response?.target);
+      console.log("VOICE_DEBUG: reward_point in response:", response?.reward_point);
 
       if (response?.status === 200) {
         setDietTemplate(response?.data || []);
         setProgressData(response?.progress || null);
 
         setConsumedFoods(response?.data || []);
+
+        // Check if we need to trigger voice based on the response
+        if (response?.play_voice_success) {
+          console.log("VOICE_DEBUG: Voice flag detected in API response, playing voice immediately!");
+
+          // Play voice immediately when API response has play_voice_success flag
+          try {
+            setTimeout(() => {
+              console.log("VOICE_DEBUG: Playing voice from API response handler");
+              Speech.speak("Food logged successfully!", {
+                voice: Platform.OS === "ios"
+                  ? "com.apple.ttsbundle.siri_female_en-US_compact"
+                  : "en-us-x-tpc-network",
+                language: "en-US",
+                pitch: 1.0,
+                rate: 1,
+                volume: 1.0,
+              });
+            }, 1000); // 1 second delay to ensure voice plays after modal processing
+          } catch (error) {
+            console.error("VOICE_DEBUG: Error playing voice from API response:", error);
+          }
+
+          // Also store voice flag for modal trigger as backup
+          try {
+            AsyncStorage.setItem("play_voice_flag", "true");
+            console.log("VOICE_DEBUG: Voice flag stored in AsyncStorage as backup");
+          } catch (e) {
+            console.log("VOICE_DEBUG: AsyncStorage not available:", e);
+          }
+        } else {
+          console.log("VOICE_DEBUG: No voice flag in API response");
+          try {
+            AsyncStorage.removeItem("play_voice_flag");
+          } catch (e) {
+            console.log("VOICE_DEBUG: AsyncStorage not available:", e);
+          }
+        }
       } else {
         showToast({
           type: "error",
@@ -661,20 +716,24 @@ iOS: https://apps.apple.com/us/app/fittbot/id6747237294`;
               <Text style={styles.mealTagline}>{item.tagline}</Text>
               <Text style={styles.mealTime}>{item.timeRange}</Text>
             </View>
-            <TouchableOpacity
-              style={styles.addFoodButton}
-              onPress={() => openMealModal(item)}
-            >
-              <LinearGradient
-                colors={["#28A745", "#007BFF"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.addButtonGradient}
+            {/* Buttons Container */}
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <TouchableOpacity
+                style={styles.addFoodButton}
+                onPress={() => openMealModal(item)}
               >
-                <Ionicons name="add" size={20} color="#fff" />
-                <Text style={styles.addButtonText}>Add Food</Text>
-              </LinearGradient>
-            </TouchableOpacity>
+                <LinearGradient
+                  colors={["#28A745", "#007BFF"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.addButtonGradient}
+                >
+                  <Ionicons name="add" size={20} color="#fff" />
+                  <Text style={styles.addButtonText}>Add Food</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+
+              </View>
           </View>
 
           {/* Food Items Section */}
@@ -966,21 +1025,110 @@ iOS: https://apps.apple.com/us/app/fittbot/id6747237294`;
 
   // Handle target and feedback modals from params - Target has priority
   useEffect(() => {
-    // Target modal has first priority
-    if (params?.showTarget === "true") {
-      setTimeout(() => {
-        setTargetCalories(
-          params?.targetCalories || progressData?.calories?.target || 0
-        );
-        setShowTargetModal(true);
-      }, 500);
-    }
-    // Only show feedback if target is not shown
-    else if (params?.showFeedback === "true") {
-      setTimeout(() => {
-        setShowFeedbackModal(true);
-      }, 500);
-    }
+    // Debug: Log params and modal trigger conditions
+    console.log("VOICE_DEBUG: useEffect triggered for modals");
+    console.log("VOICE_DEBUG: params:", params);
+    console.log("VOICE_DEBUG: showTarget:", params?.showTarget);
+    console.log("VOICE_DEBUG: showFeedback:", params?.showFeedback);
+    console.log("VOICE_DEBUG: Platform:", Platform.OS);
+    console.log("VOICE_DEBUG: Speech API available:", typeof Speech !== 'undefined');
+
+    // Check for voice flag from API response (backup trigger)
+    const checkVoiceFlagAndShowModal = async () => {
+      let shouldPlayVoice = false;
+      try {
+        const voiceFlag = await AsyncStorage.getItem("play_voice_flag");
+        if (voiceFlag === "true") {
+          console.log("VOICE_DEBUG: Found voice flag in AsyncStorage, should trigger modal and voice");
+          shouldPlayVoice = true;
+          await AsyncStorage.removeItem("play_voice_flag"); // Clear after reading
+        }
+      } catch (e) {
+        console.log("VOICE_DEBUG: Could not read AsyncStorage:", e);
+      }
+
+      // Target modal has first priority
+      if (params?.showTarget === "true" || shouldPlayVoice) {
+        console.log("VOICE_DEBUG: Target modal condition met, setting up timeout");
+        console.log("VOICE_DEBUG: Trigger source - params.showTarget:", params?.showTarget === "true", "shouldPlayVoice:", shouldPlayVoice);
+
+        setTimeout(() => {
+          console.log("VOICE_DEBUG: Timeout triggered, showing modal and playing voice");
+
+          setTargetCalories(
+            params?.targetCalories || progressData?.calories?.target || 0
+          );
+          setShowTargetModal(true);
+
+          // Play voice when target modal is shown with comprehensive error handling and fallbacks
+          try {
+            const voiceMessage = "Food logged successfully!";
+            const voiceConfigs = [
+              // Default configuration
+              {
+                voice: Platform.OS === "ios"
+                  ? "com.apple.ttsbundle.siri_female_en-US_compact"
+                  : "en-us-x-tpc-network",
+                language: "en-US",
+                pitch: 1.0,
+                rate: 1,
+                volume: 1.0,
+              },
+              // Fallback configuration
+              {
+                language: "en-US",
+                pitch: 1.0,
+                rate: 1,
+                volume: 1.0,
+              }
+            ];
+
+            console.log("VOICE_DEBUG: Modal - About to speak voice message:", voiceMessage);
+
+            // Try default config first
+            const speakPromise = Speech.speak(voiceMessage, voiceConfigs[0]);
+
+            if (speakPromise && typeof speakPromise.then === 'function') {
+              speakPromise
+                .then(() => {
+                  console.log("VOICE_DEBUG: Modal - Voice speak completed successfully");
+                })
+                .catch((error) => {
+                  console.error("VOICE_DEBUG: Modal - Voice speak failed, trying fallback:", error);
+                  // Try fallback configuration
+                  setTimeout(() => {
+                    Speech.speak(voiceMessage, voiceConfigs[1]);
+                  }, 500);
+                });
+            } else {
+              console.log("VOICE_DEBUG: Modal - Voice speak initiated (no promise returned)");
+            }
+
+          } catch (error) {
+            console.error("VOICE_DEBUG: Modal - Error in voice speech execution:", error);
+            // Try fallback without any config
+            try {
+              setTimeout(() => {
+                Speech.speak(voiceMessage, { language: "en-US", volume: 1.0 });
+              }, 500);
+            } catch (fallbackError) {
+              console.error("VOICE_DEBUG: Modal - Fallback voice also failed:", fallbackError);
+            }
+          }
+        }, 500);
+      }
+      // Only show feedback if target is not shown
+      else if (params?.showFeedback === "true") {
+        console.log("VOICE_DEBUG: Showing feedback modal");
+        setTimeout(() => {
+          setShowFeedbackModal(true);
+        }, 500);
+      } else {
+        console.log("VOICE_DEBUG: No modals to show");
+      }
+    };
+
+    checkVoiceFlagAndShowModal();
   }, [params?.showFeedback, params?.showTarget, params?.targetCalories]);
 
   useFocusEffect(
@@ -1090,17 +1238,13 @@ iOS: https://apps.apple.com/us/app/fittbot/id6747237294`;
         animationType="fade"
         transparent={true}
         visible={showTargetModal}
-        onRequestClose={() => {
-          setShowTargetModal(false);
-        }}
+        onRequestClose={stopVoiceAndCloseModal}
       >
         <View style={styles.achievementOverlay}>
           <View style={styles.achievementContent}>
             <TouchableOpacity
               style={{ position: "absolute", top: 10, right: 10, zIndex: 10 }}
-              onPress={() => {
-                setShowTargetModal(false);
-              }}
+              onPress={stopVoiceAndCloseModal}
             >
               <Ionicons name="close" size={24} color="#666" />
             </TouchableOpacity>

@@ -1132,6 +1132,22 @@ const AIFitnessBot = () => {
       setLoggedMessage(obj.message || "Food logged successfully!");
       setShowNavigationModal(true);
 
+      // Add voice feedback for food logging success
+      try {
+        const voiceMessage = "Food logged successfully!";
+        Speech.speak(voiceMessage, {
+          voice: Platform.OS === "ios"
+            ? "com.apple.ttsbundle.siri_female_en-US_compact"
+            : "en-us-x-tpc-network",
+          language: "en-US",
+          pitch: 1.0,
+          rate: 1,
+          volume: 1.0,
+        });
+      } catch (error) {
+        console.error("Voice feedback error:", error);
+      }
+
       return; // Exit early since we've already added the message
     }
 
