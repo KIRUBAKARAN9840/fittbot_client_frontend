@@ -36,6 +36,6 @@ export default function workoutLayout() {
         name="kyraAI"
         options={{ headerShown: false, gestureEnabled: false }}
       />
-    </Stack>
+        </Stack>
   );
 }

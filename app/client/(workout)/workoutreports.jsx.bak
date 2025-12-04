@@ -1,0 +1,68 @@
+import React, { useEffect, useState } from "react";
+import { View } from "react-native";
+import { useRouter, useLocalSearchParams } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import WorkoutReports from "../../../components/ui/Workout/workoutreports";
+
+const WorkoutReportsPage = () => {
+  const router = useRouter();
+  const params = useLocalSearchParams();
+  const [userData, setUserData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    console.log("🏁 WORKOUT REPORTS ROUTE WRAPPER LOADED!");
+    const fetchUserData = async () => {
+      try {
+        console.log("Route wrapper - params received:", params);
+
+        // Get user data from storage or params
+        const storedGender = await AsyncStorage.getItem("gender") || params.gender;
+        const storedProfilePic = params.profilePic || "";
+        const storedUserName = params.userName || "";
+
+        const userDataToSet = {
+          gender: storedGender,
+          profilePic: storedProfilePic,
+          userName: storedUserName,
+          badge: params.badge,
+          xp: parseInt(params.xp) || 0,
+          plan: params.plan || "",
+        };
+
+        console.log("✅ Route wrapper - userData being set:", userDataToSet);
+        setUserData(userDataToSet);
+      } catch (error) {
+        console.error("❌ Error fetching user data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, [params]);
+
+  if (loading || !userData) {
+    return <View style={{ flex: 1, backgroundColor: "#fcfcfc" }} />;
+  }
+
+  const handleSectionChange = (section) => {
+    // Handle section changes if needed
+    console.log("Section changed to:", section);
+  };
+
+  return (
+    <WorkoutReports
+      gender={userData.gender}
+      onSectionChange={handleSectionChange}
+      headerHeight={130}
+      profilePic={userData.profilePic}
+      userName={userData.userName}
+      badge={userData.badge}
+      xp={userData.xp}
+      plan={userData.plan}
+    />
+  );
+};
+
+export default WorkoutReportsPage;

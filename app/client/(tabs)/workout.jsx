@@ -69,7 +69,7 @@ const tabHeaders = [
 const Workout = () => {
   const [loading, setLoading] = useState(true);
   const [gymName, setGymName] = useState("");
-  const { task, workoutTab, showFeedback } = useLocalSearchParams();
+  const { task, workoutTab, showFeedback, tab } = useLocalSearchParams();
   const [activeTabHeader, setActiveTabHeader] = useState("+Add");
   const [headerHeight, setHeaderHeight] = useState(HEADER_MAX_HEIGHT);
   const [showHeader, setShowHeader] = useState(true);
@@ -130,9 +130,12 @@ const Workout = () => {
 
   useEffect(() => {
     getGymName();
-    setActiveTabHeader("+Add");
+    // Only set to "+Add" if no tab parameter is provided
+    if (!tab) {
+      setActiveTabHeader("+Add");
+    }
     setHeaderHeight(HEADER_MAX_HEIGHT);
-  }, []);
+  }, [tab]);
 
   // Handle feedback modal from params
   useEffect(() => {
@@ -159,6 +162,18 @@ const Workout = () => {
       fetchUserData();
     }
   }, [xp, userLoading, fetchUserData]);
+
+  // Handle tab parameter to auto-switch to Reports tab
+  useEffect(() => {
+    console.log("Workout page - tab parameter:", tab);
+    if (tab === "Reports") {
+      console.log("Setting active tab to Reports");
+      setActiveTabHeader("Reports");
+    } else if (tab === "+Add") {
+      console.log("Setting active tab to +Add");
+      setActiveTabHeader("+Add");
+    }
+  }, [tab]);
 
   useFocusEffect(
     useCallback(() => {
@@ -197,7 +212,8 @@ const Workout = () => {
       (activeTabHeader === "Analysis" ||
         activeTabHeader === "Reports" ||
         activeTabHeader === "Transformation") &&
-      isPureFreemium(plan)
+      isPureFreemium(plan) &&
+      tab !== "Reports"  // Don't override if user specifically navigated to Reports
     ) {
       if (Platform.OS === "ios") {
         setPremiumModalVisible(true);
@@ -206,7 +222,7 @@ const Workout = () => {
       }
       setActiveTabHeader("+Add");
     }
-  }, [activeTabHeader, plan]);
+  }, [activeTabHeader, plan, tab]);
 
   const renderContent = () => {
     if (activeTabHeader === "+Add") {

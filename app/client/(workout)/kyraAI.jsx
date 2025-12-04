@@ -362,6 +362,9 @@ const AIFitnessBot = () => {
   const [xpRewardVisible, setXpRewardVisible] = useState(false);
   const [xpAmount, setXpAmount] = useState(0);
   const [showMealSelector, setShowMealSelector] = useState(false);
+  const [showWorkoutNavigationModal, setShowWorkoutNavigationModal] = useState(false);
+  const [workoutLoggedMessage, setWorkoutLoggedMessage] = useState("");
+  const [workoutData, setWorkoutData] = useState(null);
   const [showMealPlanButtons, setShowMealPlanButtons] = useState(false);
   const [mealPlanData, setMealPlanData] = useState(null);
   const [showTemplateNavigationModal, setShowTemplateNavigationModal] =
@@ -1084,6 +1087,14 @@ const AIFitnessBot = () => {
 
     // Check if this is a navigation event
     if (obj.is_navigation === true) {
+      console.log("🚨 NAVIGATION EVENT RECEIVED!", {
+        prompt: obj.prompt,
+        message: obj.message,
+        type: obj.type,
+        ask: obj.ask,
+        fullObj: obj
+      });
+
       // Add the message first
       setMessages((prev) => [
         ...prev,
@@ -1098,9 +1109,50 @@ const AIFitnessBot = () => {
         },
       ]);
 
-      // Navigate to the food logs page after a short delay
+      // Determine navigation target based on prompt content and context
       setTimeout(() => {
-        router.push("/client/myListedFoodLogs");
+        const navigationPrompt = obj.prompt || obj.message || "";
+        console.log("🔍 NAVIGATION CHECK - Prompt:", navigationPrompt);
+        console.log("🔍 NAVIGATION CHECK - workoutData:", workoutData);
+
+        const isWorkoutRelated = navigationPrompt.toLowerCase().includes("workout") ||
+                               navigationPrompt.toLowerCase().includes("exercise") ||
+                               (workoutData && navigationPrompt.toLowerCase().includes("logs"));
+
+        console.log("🔍 NAVIGATION CHECK - isWorkoutRelated:", isWorkoutRelated);
+
+        // Route to appropriate destination
+        if (isWorkoutRelated) {
+          // Navigate directly to workout reports component with parameters
+          console.log("🎯 WORKOUT NAVIGATION TRIGGERED - Navigating directly to workout reports component");
+          console.log("Available profileImage:", profileImage);
+          console.log("Available userName:", userName);
+
+          const navigationParams = {
+            profilePic: profileImage || "",
+            userName: userName || "",
+            // Additional parameters will be fetched from AsyncStorage in route wrapper
+            gender: "",  // Will be fetched in route wrapper
+            plan: "",    // Will be fetched in route wrapper
+            badge: "",   // Will be fetched in route wrapper
+            xp: "0",     // Will be fetched in route wrapper
+          };
+
+          console.log("🚀 Navigation params being sent:", navigationParams);
+          console.log("📍 Route: /client/(tabs)/workout with tab: Reports");
+          console.log("🚀 Full navigation object:", {
+            pathname: "/client/(tabs)/workout",
+            params: { tab: "Reports", ...navigationParams }
+          });
+
+          router.push({
+            pathname: "/client/(tabs)/workout",
+            params: { tab: "Reports", ...navigationParams }
+          });
+        } else {
+          console.log("🍔 FOOD NAVIGATION TRIGGERED");
+          router.push("/client/myListedFoodLogs");
+        }
       }, 1000); // 1 second delay to let user see the message
 
       return; // Exit early since we've already added the message
@@ -1149,6 +1201,52 @@ const AIFitnessBot = () => {
       }
 
       return; // Exit early since we've already added the message
+    }
+
+    // Check if workout was successfully logged (status: "logged" and type: "workout_logged")
+    if (obj.status === "logged" && obj.type === "workout_logged") {
+      // Add the message to chat
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now(),
+          text: obj.message || "Workout logged successfully!",
+          isUser: false,
+          timestamp: new Date(),
+          isComplete: true,
+          special: obj.type,
+          meta: obj,
+        },
+      ]);
+
+      // Check for workout completion rewards (XP, achievements)
+      if (obj.reward_point && obj.reward_point > 0) {
+        setXpAmount(obj.reward_point);
+        setXpRewardVisible(true);
+      }
+
+      // Show workout navigation modal
+      setWorkoutLoggedMessage(obj.message || "Workout logged successfully!");
+      setWorkoutData(obj); // Store workout data for modal access
+      setShowWorkoutNavigationModal(true);
+
+      // Add workout completion voice feedback
+      try {
+        const voiceMessage = "Workout logged successfully! Great job!";
+        Speech.speak(voiceMessage, {
+          voice: Platform.OS === "ios"
+            ? "com.apple.ttsbundle.siri_female_en-US_compact"
+            : "en-us-x-tpc-network",
+          language: "en-US",
+          pitch: 1.0,
+          rate: 1.0,
+          volume: 1.0,
+        });
+      } catch (error) {
+        console.log("Voice feedback not available:", error);
+      }
+
+      return; // Exit early since we've handled the modal
     }
 
     setMessages((prev) => [
@@ -1241,6 +1339,7 @@ const AIFitnessBot = () => {
 
     const handleMessage = (event) => {
       const payload = (event?.data || "").trim();
+      console.log("📨 SSE MESSAGE RECEIVED:", payload);
 
       if (!payload) {
         return;
@@ -1250,6 +1349,7 @@ const AIFitnessBot = () => {
       if (payload.startsWith("{") && payload.endsWith("}")) {
         try {
           const jsonObj = JSON.parse(payload);
+          console.log("🔍 RAW JSON EVENT RECEIVED:", jsonObj);
 
           // Handle all special events (welcome, cuisine, etc.)
           handleSpecialEvent(jsonObj);
@@ -2407,6 +2507,81 @@ const AIFitnessBot = () => {
         </View>
       </Modal>
 
+      {/* Workout Success Navigation Modal */}
+      <Modal
+        visible={showWorkoutNavigationModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowWorkoutNavigationModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Ionicons name="fitness" size={60} color="#FF6B35" />
+              <Text style={styles.modalTitle}>Workout Logged Successfully!</Text>
+              <Text style={styles.modalMessage}>{workoutLoggedMessage}</Text>
+
+              {/* Workout Summary Stats */}
+              {workoutData?.total_duration_minutes && (
+                <View style={styles.workoutStats}>
+                  <Text style={styles.workoutStatText}>
+                    Duration: {workoutData.total_duration_minutes} minutes
+                  </Text>
+                  {workoutData?.estimated_calories && (
+                    <Text style={styles.workoutStatText}>
+                      Calories: ~{workoutData.estimated_calories} burned
+                    </Text>
+                  )}
+                </View>
+              )}
+            </View>
+
+            <View style={styles.modalActions}>
+              {/* View Workout Logs Button */}
+              <TouchableOpacity
+                style={styles.modalButton}
+                onPress={() => {
+                  setShowWorkoutNavigationModal(false);
+                  router.push({
+                    pathname: "/client/(tabs)/workout",
+                    params: { tab: "Reports" }
+                  });
+                }}
+              >
+                <LinearGradient
+                  colors={["#FF6B35", "#F7931E"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.modalButtonGradient}
+                >
+                  <Ionicons name="bar-chart" size={20} color="#fff" />
+                  <Text style={styles.modalButtonText}>View Workout Logs</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+
+              {/* Log More Workouts Button */}
+              <TouchableOpacity
+                style={styles.modalButton}
+                onPress={() => {
+                  setShowWorkoutNavigationModal(false);
+                  // User stays on chatbot page, ready to log another workout
+                }}
+              >
+                <LinearGradient
+                  colors={["#28A745", "#20C997"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.modalButtonGradient}
+                >
+                  <Ionicons name="add-circle" size={20} color="#fff" />
+                  <Text style={styles.modalButtonText}>Log More Workouts</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       {/* Template Navigation Modal */}
       <Modal
         visible={showTemplateNavigationModal}
@@ -3039,6 +3214,19 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "700",
+  },
+  workoutStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+    marginTop: 15,
+    paddingHorizontal: 20,
+  },
+  workoutStatText: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });
 
