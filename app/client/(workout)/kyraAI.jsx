@@ -1232,7 +1232,10 @@ const AIFitnessBot = () => {
 
       // Add workout completion voice feedback
       try {
-        const voiceMessage = "Workout logged successfully! Great job!";
+        const voiceMessage = "Great job! Workout logged successfully";
+
+        console.log("🔊 Playing workout success voice:", voiceMessage);
+
         Speech.speak(voiceMessage, {
           voice: Platform.OS === "ios"
             ? "com.apple.ttsbundle.siri_female_en-US_compact"
