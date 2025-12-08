@@ -1028,6 +1028,8 @@ const AIFitnessBot = () => {
 
   /* ─────────────────── Handle special SSE JSON events ─────────────────── */
   const handleSpecialEvent = async (obj) => {
+    console.log("🔍 DEBUG: handleSpecialEvent called with:", obj);
+
     // Stop animations
     stopThinkingAnimation();
     stopTypingAnimation();
@@ -1039,6 +1041,23 @@ const AIFitnessBot = () => {
       setMealPlanData(obj);
       // Show Save and Modify buttons
       setShowMealPlanButtons(true);
+
+      // Add voice feedback for template creation
+      try {
+        const voiceMessage = "Here is your diet template.";
+        Speech.speak(voiceMessage, {
+          voice: Platform.OS === "ios"
+            ? "com.apple.ttsbundle.siri_female_en-US_compact"
+            : "en-us-x-tpc-network",
+          language: "en-US",
+          pitch: 1.0,
+          rate: 1.0,
+          volume: 1.0,
+        });
+      } catch (error) {
+        console.error("Voice feedback error:", error);
+      }
+
       return; // Exit early, buttons will be shown
     }
 
@@ -1052,6 +1071,23 @@ const AIFitnessBot = () => {
       setMealPlanData(obj);
       // Show Save and Modify buttons
       setShowMealPlanButtons(true);
+
+      // Add voice feedback for workout template creation
+      try {
+        const voiceMessage = "Here is your workout plan";
+        Speech.speak(voiceMessage, {
+          voice: Platform.OS === "ios"
+            ? "com.apple.ttsbundle.siri_female_en-US_compact"
+            : "en-us-x-tpc-network",
+          language: "en-US",
+          pitch: 1.0,
+          rate: 1.0,
+          volume: 1.0,
+        });
+      } catch (error) {
+        console.error("Voice feedback error:", error);
+      }
+
       return; // Exit early, buttons will be shown
     }
 
@@ -1074,6 +1110,42 @@ const AIFitnessBot = () => {
         },
       ]);
 
+      // Add voice feedback for meal template saved
+      if (obj.type === "meal_template" || obj.type === "meal_plan_final") {
+        try {
+          const voiceMessage = "Your diet plan saved";
+          Speech.speak(voiceMessage, {
+            voice: Platform.OS === "ios"
+              ? "com.apple.ttsbundle.siri_female_en-US_compact"
+              : "en-us-x-tpc-network",
+            language: "en-US",
+            pitch: 1.0,
+            rate: 1.0,
+            volume: 1.0,
+          });
+        } catch (error) {
+          console.error("Voice feedback error:", error);
+        }
+      }
+
+      // Add voice feedback for workout template saved
+      if (obj.type === "workout_template") {
+        try {
+          const voiceMessage = "Workout plan saved";
+          Speech.speak(voiceMessage, {
+            voice: Platform.OS === "ios"
+              ? "com.apple.ttsbundle.siri_female_en-US_compact"
+              : "en-us-x-tpc-network",
+            language: "en-US",
+            pitch: 1.0,
+            rate: 1.0,
+            volume: 1.0,
+          });
+        } catch (error) {
+          console.error("Voice feedback error:", error);
+        }
+      }
+
       // Show the template navigation modal
       setTemplateSaveMessage(obj.message || "Meal plan saved successfully!");
       setShowTemplateNavigationModal(true);
@@ -1083,6 +1155,35 @@ const AIFitnessBot = () => {
     // Check if this is a food log entry that needs to be saved
     if (obj.is_log === true && obj.type === "food_log" && obj.entry) {
       await saveFoodLog(obj.entry);
+    }
+
+    // Check if this is a report analysis completion event for voice feedback
+    if (obj.is_log === true && obj.type === "report_analysis") {
+      console.log("📊 DEBUG: Report analysis condition matched!", obj);
+      console.log("📊 Report analysis completed, playing voice feedback");
+
+      // Add voice feedback for report analysis completion
+      try {
+        const voiceMessage = "Here is your workout and diet report";
+        console.log("🔊 DEBUG: About to play voice:", voiceMessage);
+        console.log("🔊 Playing report analysis voice:", voiceMessage);
+
+        Speech.speak(voiceMessage, {
+          voice: Platform.OS === "ios"
+            ? "com.apple.ttsbundle.siri_female_en-US_compact"
+            : "en-us-x-tpc-network",
+          language: "en-US",
+          pitch: 1.0,
+          rate: 1.0,
+          volume: 1.0,
+          onStart: () => console.log("🔊 DEBUG: Voice started"),
+          onDone: () => console.log("🔊 DEBUG: Voice completed"),
+        });
+      } catch (error) {
+        console.log("🔊 DEBUG: Voice error:", error);
+      }
+
+      return; // Exit early since we've handled the voice
     }
 
     // Check if this is a navigation event
@@ -1252,6 +1353,7 @@ const AIFitnessBot = () => {
       return; // Exit early since we've handled the modal
     }
 
+    
     setMessages((prev) => [
       ...prev,
       {
@@ -1353,6 +1455,9 @@ const AIFitnessBot = () => {
         try {
           const jsonObj = JSON.parse(payload);
           console.log("🔍 RAW JSON EVENT RECEIVED:", jsonObj);
+          console.log("🔍 DEBUG: JSON keys:", Object.keys(jsonObj));
+          console.log("🔍 DEBUG: is_log:", jsonObj.is_log);
+          console.log("🔍 DEBUG: type:", jsonObj.type);
 
           // Handle all special events (welcome, cuisine, etc.)
           handleSpecialEvent(jsonObj);

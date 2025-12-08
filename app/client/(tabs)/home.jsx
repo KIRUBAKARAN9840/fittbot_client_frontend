@@ -3,8 +3,6 @@ import React, {
   useEffect,
   useRef,
   useState,
-  lazy,
-  Suspense,
 } from "react";
 import {
   StyleSheet,
@@ -28,24 +26,16 @@ import { registerForPushNotificationsAsync } from "../../../components/usePushNo
 import { useNavigation } from "../../../context/NavigationContext";
 import { useUser } from "../../../context/UserContext";
 
-// Lazy load heavy components
-const ProgressTab = lazy(() =>
-  import("../../../components/ui/Home/myprogress")
-);
-const GymTab = lazy(() => import("../../../components/ui/Home/mygym"));
-const Buddy = lazy(() => import("../../../components/ui/Home/buddy"));
-const GeneralAnalysis = lazy(() =>
-  import("../../../components/ui/Home/generalanalysis")
-);
-const MyLeaderboard = lazy(() =>
-  import("../../../components/ui/Home/myleaderboard")
-);
-const Rewards = lazy(() => import("../../../components/ui/Home/rewards"));
-const WaterTracker = lazy(() =>
-  import("../../../components/ui/Home/watertracker")
-);
-const Reminders = lazy(() => import("../../../components/ui/Home/reminder"));
-const GymStudios = lazy(() => import("../../../components/ui/Home/gymstudios"));
+// Import components directly (lazy loading causes issues in React Native)
+import ProgressTab from "../../../components/ui/Home/myprogress";
+import GymTab from "../../../components/ui/Home/mygym";
+import Buddy from "../../../components/ui/Home/buddy";
+import GeneralAnalysis from "../../../components/ui/Home/generalanalysis";
+import MyLeaderboard from "../../../components/ui/Home/myleaderboard";
+import Rewards from "../../../components/ui/Home/rewards";
+import WaterTracker from "../../../components/ui/Home/watertracker";
+import Reminders from "../../../components/ui/Home/reminder";
+import GymStudios from "../../../components/ui/Home/gymstudios";
 
 import {
   BadgeDetailsModal,
@@ -449,7 +439,7 @@ const App = () => {
 
   const renderContent = React.useCallback(() => {
     return (
-      <Suspense fallback={<LoadingFallback />}>
+      <>
         {activeTabHeader === "My Gym" ? (
           <GymTab scrollY={scrollY} plan={plan} onChangeTab={changeTab} />
         ) : activeTabHeader === "Gym Studios" ? (
@@ -481,7 +471,7 @@ const App = () => {
         ) : (
           <ProgressTab onChangeTab={changeTab} xpbar={xpbarData} plan={plan} />
         )}
-      </Suspense>
+      </>
     );
   }, [activeTabHeader, xpbarData, plan, myParams, scrollY]);
 
