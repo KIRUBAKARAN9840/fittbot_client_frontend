@@ -529,6 +529,20 @@ const AIFitnessBot = () => {
         }, 500); // Small delay to ensure everything is initialized
       } else if (source === "foodlog" && !selectedMeal) {
         // For foodlog without meal selection, just show meal selector
+        // Add voice for meal selection
+        try {
+          Speech.speak("Select your meal slot", {
+            voice: Platform.OS === "ios"
+              ? "com.apple.ttsbundle.siri_female_en-US_compact"
+              : "en-us-x-tpc-network",
+            language: "en-US",
+            pitch: 1.0,
+            rate: 1,
+            volume: 1.0,
+          });
+        } catch (error) {
+          console.error("VOICE_DEBUG: Error playing meal selector voice:", error);
+        }
         setShowMealSelector(true);
         // No welcome message, user will see meal selector directly
       } else {
@@ -1679,8 +1693,6 @@ const AIFitnessBot = () => {
       },
     ]);
   };
-
-  /* ─────────────────── Radio Button Handlers ─────────────────── */
   /* ─────────────────── Radio Button Handlers ─────────────────── */
   const handleChatbotSwitch = async (newSource) => {
     // Don't switch if already on this chatbot
@@ -1738,7 +1750,23 @@ const AIFitnessBot = () => {
       }, 300);
     } else if (newSource === "foodlog") {
       // For foodlog, just show meal selector without welcome message
-      setTimeout(() => setShowMealSelector(true), 300);
+      setTimeout(() => {
+        // Add voice for meal selection
+        try {
+          Speech.speak("Select your meal slot", {
+            voice: Platform.OS === "ios"
+              ? "com.apple.ttsbundle.siri_female_en-US_compact"
+              : "en-us-x-tpc-network",
+            language: "en-US",
+            pitch: 1.0,
+            rate: 1,
+            volume: 1.0,
+          });
+        } catch (error) {
+          console.error("VOICE_DEBUG: Error playing meal selector voice:", error);
+        }
+        setShowMealSelector(true);
+      }, 300);
     } else {
       // For other sources, show welcome message
       const welcomeText = newConfig.welcomeMessage.replace(
@@ -2597,7 +2625,23 @@ const AIFitnessBot = () => {
                 onPress={() => {
                   setShowNavigationModal(false);
                   // Show meal selector to choose meal for logging more food
-                  setTimeout(() => setShowMealSelector(true), 300);
+                  setTimeout(() => {
+                    // Add voice for meal selection
+                    try {
+                      Speech.speak("Select your meal slot", {
+                        voice: Platform.OS === "ios"
+                          ? "com.apple.ttsbundle.siri_female_en-US_compact"
+                          : "en-us-x-tpc-network",
+                        language: "en-US",
+                        pitch: 1.0,
+                        rate: 1,
+                        volume: 1.0,
+                      });
+                    } catch (error) {
+                      console.error("VOICE_DEBUG: Error playing meal selector voice:", error);
+                    }
+                    setShowMealSelector(true);
+                  }, 300);
                 }}
               >
                 <LinearGradient

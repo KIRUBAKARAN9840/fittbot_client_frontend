@@ -165,7 +165,7 @@ const Workout = () => {
 
   // Handle tab parameter to auto-switch to Reports tab
   useEffect(() => {
-    console.log("Workout page - tab parameter:", tab);
+    // console.log("Workout page - tab parameter:", tab);
     if (tab === "Reports") {
       console.log("Setting active tab to Reports");
       setActiveTabHeader("Reports");
