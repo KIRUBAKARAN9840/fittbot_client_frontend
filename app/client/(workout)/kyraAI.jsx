@@ -1171,34 +1171,7 @@ const AIFitnessBot = () => {
       await saveFoodLog(obj.entry);
     }
 
-    // Check if this is a report analysis completion event for voice feedback
-    if (obj.is_log === true && obj.type === "report_analysis") {
-      console.log("📊 DEBUG: Report analysis condition matched!", obj);
-      console.log("📊 Report analysis completed, playing voice feedback");
-
-      // Add voice feedback for report analysis completion
-      try {
-        const voiceMessage = "Here is your workout and diet report";
-        console.log("🔊 DEBUG: About to play voice:", voiceMessage);
-        console.log("🔊 Playing report analysis voice:", voiceMessage);
-
-        Speech.speak(voiceMessage, {
-          voice: Platform.OS === "ios"
-            ? "com.apple.ttsbundle.siri_female_en-US_compact"
-            : "en-us-x-tpc-network",
-          language: "en-US",
-          pitch: 1.0,
-          rate: 1.0,
-          volume: 1.0,
-          onStart: () => console.log("🔊 DEBUG: Voice started"),
-          onDone: () => console.log("🔊 DEBUG: Voice completed"),
-        });
-      } catch (error) {
-        console.log("🔊 DEBUG: Voice error:", error);
-      }
-
-      return; // Exit early since we've handled the voice
-    }
+    // Report analysis voice feedback removed - no voice for report analysis
 
     // Check if this is a navigation event
     if (obj.is_navigation === true) {
@@ -1467,7 +1440,7 @@ const AIFitnessBot = () => {
       // Handle JSON events (welcome, cuisine, etc.)
       if (payload.startsWith("{") && payload.endsWith("}")) {
         try {
-          const jsonObj = JSON.parse(payload);
+          const jsonObj = JSON.parse(payload);n
           console.log("🔍 RAW JSON EVENT RECEIVED:", jsonObj);
           console.log("🔍 DEBUG: JSON keys:", Object.keys(jsonObj));
           console.log("🔍 DEBUG: is_log:", jsonObj.is_log);
