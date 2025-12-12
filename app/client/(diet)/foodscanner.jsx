@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   StyleSheet,
   Text,
@@ -28,6 +28,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { isPureFreemium } from "../../../config/access";
 import { useUser } from "../../../context/UserContext";
 import PremiumBadge from "../../../components/ui/Payment/premiumbadge";
+import * as Speech from "expo-speech";
 
 const { width, height } = Dimensions.get("window");
 
@@ -53,6 +54,114 @@ const SimpleFoodScanner = () => {
   const insets = useSafeAreaInsets();
   const { plan } = useUser();
 
+  // Voice state
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
+
+  // Check voice preference
+  useEffect(() => {
+    const checkVoicePreference = async () => {
+      try {
+        const voicePref = await AsyncStorage.getItem('voice_preference');
+        setVoiceEnabled(voicePref !== '0');
+      } catch (error) {
+        console.error("FOOD_SCANNER_VOICE: Error checking voice preference:", error);
+        setVoiceEnabled(true); // Default to enabled
+      }
+    };
+    checkVoicePreference();
+  }, []);
+
+  // Handle food scan voice feedback (follow existing pattern like kyraAI)
+  const handleFoodScanVoice = useCallback(async (scanResults) => {
+    try {
+      if (!voiceEnabled) return;
+
+      const items = scanResults?.items || [];
+      console.log("FOOD_SCANNER_VOICE: Detected items:", items);
+
+      // Generate voice message based on food category
+      if (items.length === 0) {
+        console.log("FOOD_SCANNER_VOICE: No items detected, using general message");
+        speakVoice("Great job tracking your nutrition! Keep it up!");
+        return;
+      }
+
+      const foodText = items.join(" ").toLowerCase();
+      console.log("FOOD_SCANNER_VOICE: Food text for analysis:", foodText);
+
+      // Check if "unknown" is detected as food item
+      if (foodText.includes('unknown') || items.some(item => item.toLowerCase() === 'unknown')) {
+        console.log("FOOD_SCANNER_VOICE: Unknown food detected, using no food message");
+        speakVoice("Sorry, I couldn’t detect food here; please try a clearer picture.");
+        return;
+      }
+
+      // Enhanced category detection
+      let voiceMessage = "";
+
+      // Juice and liquid categories
+      if (foodText.includes('juice') || foodText.includes('milk') || foodText.includes('drink') ||
+          foodText.includes('water') || foodText.includes('tea') || foodText.includes('coffee') ||
+          foodText.includes('smoothie') || foodText.includes('lassi') || foodText.includes('shake') ||
+          foodText.includes('orange juice') || foodText.includes('sugarcane juice') || foodText.includes('avocado juice')) {
+        voiceMessage = "Enjoy your refreshing drink! Staying hydrated is important for your fitness journey.";
+      }
+      // Fast food categories
+      else if (foodText.includes('pizza') || foodText.includes('burger') || foodText.includes('cheeseburger') ||
+               foodText.includes('fries') || foodText.includes('sandwich') || foodText.includes('pasta') ||
+               foodText.includes('noodles') || foodText.includes('doughnut') || foodText.includes('fast food')) {
+        voiceMessage = "Enjoy your meal! Remember to balance it with healthy choices throughout the day.";
+      }
+      // Chip categories
+      else if (foodText.includes('chips') || foodText.includes('potato chips') || foodText.includes('corn chips')) {
+        voiceMessage = "Enjoy your snack! Perfect for satisfying those cravings.";
+      }
+      // Snack categories
+      else if (foodText.includes('cookie') || foodText.includes('biscuit') || foodText.includes('cake') ||
+               foodText.includes('pastry') || foodText.includes('candy') || foodText.includes('chocolate') ||
+               foodText.includes('nuts')) {
+        voiceMessage = "Enjoy your tasty snack! Smart choices keep you energized.";
+      }
+      // Check for balanced meals with protein
+      else if (foodText.includes('chicken') || foodText.includes('fish') || foodText.includes('egg') ||
+               foodText.includes('dal') || foodText.includes('beans') || foodText.includes('tofu') ||
+               foodText.includes('meat') || foodText.includes('protein')) {
+        voiceMessage = "Enjoy your protein-rich meal! Great for muscle recovery and growth.";
+      }
+      // Check for vegetables
+      else if (foodText.includes('vegetable') || foodText.includes('salad') || foodText.includes('spinach') ||
+               foodText.includes('broccoli') || foodText.includes('carrot') || foodText.includes('tomato') ||
+               foodText.includes('onion') || foodText.includes('potato') || foodText.includes('rice')) {
+        voiceMessage = "Enjoy your healthy meal! Those vegetables are packed with vitamins and minerals.";
+      }
+      // Default to regular food
+      else {
+        voiceMessage = "Enjoy your delicious meal! Every healthy choice counts.";
+      }
+
+      console.log("FOOD_SCANNER_VOICE: Final voice message:", voiceMessage);
+      speakVoice(voiceMessage);
+    } catch (error) {
+      console.error("FOOD_SCANNER_VOICE: Error in voice feedback:", error);
+    }
+  }, [voiceEnabled]);
+
+  // Helper function to speak voice message
+  const speakVoice = (message) => {
+    // Stop any ongoing speech and speak the message
+    Speech.stop();
+    Speech.speak(message, {
+      voice: Platform.OS === "ios"
+        ? "com.apple.ttsbundle.siri_female_en-US_compact"
+        : "en-us-x-tpc-network",
+      language: "en-US",
+      pitch: 1.0,
+      rate: 1.0,
+      volume: 1.0,
+    });
+  };
+
+  
   // Initialize template data from params
   useEffect(() => {
     if (selectedMeal) {
@@ -241,6 +350,11 @@ const SimpleFoodScanner = () => {
 
       if (response?.status === 200) {
         setScanResults(response.data);
+
+        // Trigger voice feedback after successful scan
+        if (response.data && response.data.items && response.data.items.length > 0) {
+          handleFoodScanVoice(response.data);
+        }
       } else {
         Alert.alert("Error", "Failed to analyze food. Please try again.");
       }

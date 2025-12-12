@@ -1440,7 +1440,7 @@ const AIFitnessBot = () => {
       // Handle JSON events (welcome, cuisine, etc.)
       if (payload.startsWith("{") && payload.endsWith("}")) {
         try {
-          const jsonObj = JSON.parse(payload);n
+          const jsonObj = JSON.parse(payload);
           console.log("🔍 RAW JSON EVENT RECEIVED:", jsonObj);
           console.log("🔍 DEBUG: JSON keys:", Object.keys(jsonObj));
           console.log("🔍 DEBUG: is_log:", jsonObj.is_log);
