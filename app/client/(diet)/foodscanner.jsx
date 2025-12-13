@@ -99,12 +99,20 @@ const SimpleFoodScanner = () => {
       // Enhanced category detection
       let voiceMessage = "";
 
-      // Juice and liquid categories
+      // Juice and liquid categories (non-alcoholic)
       if (foodText.includes('juice') || foodText.includes('milk') || foodText.includes('drink') ||
           foodText.includes('water') || foodText.includes('tea') || foodText.includes('coffee') ||
           foodText.includes('smoothie') || foodText.includes('lassi') || foodText.includes('shake') ||
           foodText.includes('orange juice') || foodText.includes('sugarcane juice') || foodText.includes('avocado juice')) {
         voiceMessage = "Enjoy your refreshing drink! Staying hydrated is important for your fitness journey.";
+      }
+      // Alcohol categories
+      else if (foodText.includes('beer') || foodText.includes('wine') || foodText.includes('whiskey') ||
+               foodText.includes('vodka') || foodText.includes('rum') || foodText.includes('gin') ||
+               foodText.includes('tequila') || foodText.includes('brandy') || foodText.includes('cocktail') ||
+               foodText.includes('liquor') || foodText.includes('alcohol') || foodText.includes('wine glass') ||
+               foodText.includes('beer bottle') || foodText.includes('cocktail glass') || foodText.includes('bar')) {
+        voiceMessage = "Enjoy your drink! Please remember to enjoy alcohol in moderation for your health and fitness goals.";
       }
       // Fast food categories
       else if (foodText.includes('pizza') || foodText.includes('burger') || foodText.includes('cheeseburger') ||
